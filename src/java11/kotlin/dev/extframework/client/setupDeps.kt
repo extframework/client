@@ -11,15 +11,11 @@ import dev.extframework.boot.maven.MavenResolverProvider
 
 internal fun setupDependencyTypes(
     archiveGraph: ArchiveGraph,
-    auditors: Auditors,
 ): DependencyTypeContainer {
-    val maven = object : MavenDependencyResolver(
+    val maven = MavenDependencyResolver(
         parentClassLoader = ClassLoader.getSystemClassLoader(),
         resolutionProvider = JpmResolutionProvider
-    ) {
-        override val auditors: Auditors
-            get() = auditors
-    }
+    )
 
     val dependencyTypes = DependencyTypeContainer(archiveGraph)
     dependencyTypes.register("simple-maven", MavenResolverProvider(maven))

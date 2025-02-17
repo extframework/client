@@ -1,6 +1,7 @@
 import dev.extframework.gradle.common.*
 import dev.extframework.gradle.common.dm.artifactResolver
 import dev.extframework.gradle.common.dm.jobs
+import dev.extframework.gradle.common.dm.resourceApi
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -10,13 +11,13 @@ plugins {
     java
     application
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("dev.extframework.common") version "1.0.44"
+    id("dev.extframework.common") version "1.0.49"
 
     id("me.champeau.mrjar") version "0.1.1"
 }
 
 group = "dev.extframework"
-version = "1.1-BETA"
+version = "1.1.2-BETA"
 
 repositories {
     mavenCentral()
@@ -39,8 +40,6 @@ multiRelease {
     targetVersions(8, 11)
 }
 
-val bootVersion = BOOT_VERSION
-
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
@@ -51,20 +50,22 @@ dependencies {
     toolingApi()
     jobs()
     archives()
-    boot(version = bootVersion)
+    boot()
     objectContainer()
     artifactResolver(maven = true)
     commonUtil()
     extLoader()
-    coreMcApi()
-//    minecraftBootstrapper()
+    implementation("dev.extframework.core:app-api:1.0-BETA")
+    implementation("dev.extframework.core:minecraft-api:1.0-BETA")
+//    coreMcApi()
+    resourceApi(version = "1.2.1-SNAPSHOT")
 
-    implementation("dev.extframework:boot:$bootVersion:jdk11")
+    implementation("dev.extframework:boot:$BOOT_VERSION:jdk11")
     implementation("dev.extframework:archives:$ARCHIVES_VERSION:jdk11")
 
 
-    "java11Implementation"("dev.extframework:boot:$bootVersion:jdk11")
-    boot(version = bootVersion, configurationName = "java11Implementation")
+    "java11Implementation"("dev.extframework:boot:$BOOT_VERSION:jdk11")
+    boot(configurationName = "java11Implementation")
     objectContainer(configurationName = "java11Implementation")
 
 

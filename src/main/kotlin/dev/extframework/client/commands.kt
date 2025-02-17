@@ -12,9 +12,10 @@ import dev.extframework.boot.audit.Auditors
 import dev.extframework.boot.dependency.DependencyTypeContainer
 import dev.extframework.common.util.immutableLateInit
 import dev.extframework.common.util.resolve
+import dev.extframework.core.app.api.ApplicationTarget
+import dev.extframework.core.minecraft.api.MappingNamespace
 import dev.extframework.tooling.api.extension.artifact.ExtensionDescriptor
 import dev.extframework.tooling.api.extension.artifact.ExtensionRepositorySettings
-import dev.extframework.tooling.api.target.ApplicationTarget
 import java.nio.file.Path
 import kotlin.io.path.Path
 
@@ -28,7 +29,7 @@ internal class LaunchInfo(
     val app: ApplicationTarget,
     val extensionDirPath: Path,
 
-    val mappingNS: String
+    val mappingNS: MappingNamespace,
 )
 //
 //internal class GameOptions(
@@ -67,7 +68,6 @@ internal data class LaunchContext(
     val launchInfo: LaunchInfo,
 //    val options: GameOptions,
     val archiveGraph: ArchiveGraph,
-    val extraAuditors: Auditors,
     val dependencyTypes: DependencyTypeContainer,
 )
 
@@ -105,8 +105,8 @@ internal class ProductionCommand(
         launch(BootLoggerFactory()) {
             val packagedDependencies = parsePackagedDependencies()
             val archiveGraph = setupArchiveGraph(extframeworkDir resolve "archives", packagedDependencies)
-            val extraAuditors: Auditors = setupExtraAuditors(archiveGraph, packagedDependencies)
-            val dependencyTypes = setupDependencyTypes(archiveGraph, extraAuditors)
+            setupExtraAuditors(archiveGraph, packagedDependencies)
+            val dependencyTypes = setupDependencyTypes(archiveGraph)
 
             val classpath = this@ProductionCommand.classpath.split(CP_SPLIT_PATH).map(::Path)
             val info = LaunchInfo(
@@ -119,13 +119,12 @@ internal class ProductionCommand(
                     Path(gameJar)
                 ),
                 Path(extensionDir),
-                mappingNamespace,
+                MappingNamespace.parse(mappingNamespace),
             )
 
             val context = LaunchContext(
                 info,
                 archiveGraph,
-                extraAuditors,
                 dependencyTypes
             )
 

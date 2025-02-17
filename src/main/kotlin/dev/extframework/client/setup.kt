@@ -9,17 +9,12 @@ import com.durganmcbroom.jobs.async.asyncJob
 import com.durganmcbroom.jobs.job
 import dev.extframework.boot.archive.*
 import dev.extframework.boot.audit.Auditors
-import dev.extframework.boot.audit.chain
 import dev.extframework.boot.constraint.ConstraintArchiveAuditor
 import dev.extframework.boot.dependency.BasicDependencyNode
-import dev.extframework.boot.dependency.DependencyTypeContainer
 import dev.extframework.boot.maven.MavenConstraintNegotiator
-import dev.extframework.boot.maven.MavenDependencyResolver
-import dev.extframework.boot.maven.MavenResolverProvider
 import dev.extframework.boot.monad.Tagged
 import dev.extframework.boot.monad.Tree
 import dev.extframework.boot.monad.removeIf
-import dev.extframework.boot.monad.tag
 import dev.extframework.boot.util.typeOf
 import dev.extframework.common.util.readInputStream
 import java.nio.file.Path
@@ -29,7 +24,7 @@ import kotlin.io.path.Path
 internal fun setupExtraAuditors(
     archiveGraph: ArchiveGraph,
     packagedDependencies: Set<SimpleMavenDescriptor>
-): Auditors {
+) {
     val negotiator = MavenConstraintNegotiator()
 
     val alreadyLoaded = packagedDependencies.mapTo(HashSet()) {
@@ -43,13 +38,12 @@ internal fun setupExtraAuditors(
             }!!)
         }
     }
-    val archiveTreeAuditor = ConstraintArchiveAuditor(
-        listOf(MavenConstraintNegotiator()),
-    ).chain(packagedDependencyRemover)
 
-    return Auditors(
-        archiveTreeAuditor
-    )
+//    val archiveTreeAuditor = ConstraintArchiveAuditor(
+//        listOf(MavenConstraintNegotiator()),
+//    ).chain(packagedDependencyRemover)
+
+    archiveGraph.auditors = archiveGraph.auditors.chain(packagedDependencyRemover)
 }
 
 private class THIS
@@ -92,6 +86,8 @@ internal fun setupArchiveGraph(
 
 internal class PrimordialNodeResolver :
     ArchiveNodeResolver<ArtifactMetadata.Descriptor, ArtifactRequest<ArtifactMetadata.Descriptor>, BasicDependencyNode<ArtifactMetadata.Descriptor>, RepositorySettings, ArtifactMetadata<ArtifactMetadata.Descriptor, *>> {
+    override val context: ResolutionContext<RepositorySettings, ArtifactRequest<ArtifactMetadata.Descriptor>, ArtifactMetadata<ArtifactMetadata.Descriptor, *>>
+        get() = throw UnsupportedOperationException()
     override val metadataType: Class<ArtifactMetadata<ArtifactMetadata.Descriptor, *>> = typeOf()
     override val name: String = "primordial"
     override val nodeType: Class<in BasicDependencyNode<ArtifactMetadata.Descriptor>> = typeOf()
@@ -121,10 +117,6 @@ internal class PrimordialNodeResolver :
         helper: ResolutionHelper
     ): Job<BasicDependencyNode<ArtifactMetadata.Descriptor>> {
         return FailingJob { ArchiveException(helper.trace, "Operation not supported") }
-    }
-
-    override fun createContext(settings: RepositorySettings): ResolutionContext<RepositorySettings, ArtifactRequest<ArtifactMetadata.Descriptor>, ArtifactMetadata<ArtifactMetadata.Descriptor, *>> {
-        throw UnsupportedOperationException()
     }
 
     override fun cache(

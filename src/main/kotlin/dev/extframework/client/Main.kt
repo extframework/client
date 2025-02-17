@@ -5,15 +5,17 @@ import com.durganmcbroom.jobs.*
 import dev.extframework.boot.archive.*
 import dev.extframework.boot.loader.*
 import dev.extframework.common.util.resolve
+import dev.extframework.core.app.api.ApplicationTarget
 import dev.extframework.extloader.InternalExtensionEnvironment
 import dev.extframework.extloader.extension.DefaultExtensionResolver
 import dev.extframework.extloader.extension.partition.DefaultPartitionResolver
 import dev.extframework.extloader.initExtensions
 import dev.extframework.tooling.api.environment.ExtensionEnvironment
+import dev.extframework.tooling.api.environment.ValueAttribute
 import dev.extframework.tooling.api.environment.extract
 import dev.extframework.tooling.api.extension.artifact.ExtensionDescriptor
 import dev.extframework.tooling.api.extension.partition.artifact.PartitionDescriptor
-import dev.extframework.tooling.api.target.ApplicationTarget
+import kotlinx.coroutines.runBlocking
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.Path
@@ -49,30 +51,35 @@ public fun main(args: Array<String>) {
     val launchContext = command.launchContext
 
     launch(BootLoggerFactory()) {
-        val environment = InternalExtensionEnvironment(
-            getHomedir(),
-            launchContext.archiveGraph,
-            launchContext.dependencyTypes,
-            launchContext.launchInfo.app
-        )
-        environment += ClientExtensionResolver(
-            environment,
-            launchContext.launchInfo.extensionDirPath
-        )
+        runBlocking {
+            val environment = InternalExtensionEnvironment(
+                getHomedir(),
+                launchContext.archiveGraph,
+                launchContext.dependencyTypes,
+            )
 
-        System.setProperty("mapping.target", launchContext.launchInfo.mappingNS)
-        initExtensions(
-            launchContext.launchInfo.requests,
-            environment
-        )().merge()
+            environment += launchContext.launchInfo.app
 
-        val app = environment[ApplicationTarget].extract().node.handle!!.classloader
+            environment += ClientExtensionResolver(
+                environment,
+                launchContext.launchInfo.extensionDirPath
+            )
 
-        val mainClass = app.loadClass(
-            launchContext.launchInfo.mainClass
-        )
+            environment += ValueAttribute(launchContext.launchInfo.mappingNS, ValueAttribute.Key("mapping-target"))
 
-        mainClass.getMethod("main", Array<String>::class.java).invoke(null, gameArgs)
+            initExtensions(
+                launchContext.launchInfo.requests,
+                environment
+            )().merge()
+
+            val app = environment[ApplicationTarget].extract().node.handle!!.classloader
+
+            val mainClass = app.loadClass(
+                launchContext.launchInfo.mainClass
+            )
+
+            mainClass.getMethod("main", Array<String>::class.java).invoke(null, gameArgs)
+        }
     }
 }
 
@@ -100,9 +107,9 @@ private class ClientExtensionResolver(
     ClientExtensionResolver::class.java.classLoader, environment
 ) {
     override val partitionResolver: DefaultPartitionResolver = object : DefaultPartitionResolver(
-        factory,
         environment,
-        { extensionLoaders[it]!! }) {
+        accessBridge
+    ) {
         override fun pathForDescriptor(descriptor: PartitionDescriptor, classifier: String, type: String): Path {
             return path resolve super.pathForDescriptor(descriptor, classifier, type)
         }

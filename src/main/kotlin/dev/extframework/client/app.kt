@@ -8,9 +8,10 @@ import dev.extframework.boot.archive.ArchiveAccessTree
 import dev.extframework.boot.archive.ArchiveTarget
 import dev.extframework.boot.archive.ClassLoadedArchiveNode
 import dev.extframework.boot.loader.*
+import dev.extframework.common.util.readInputStream
+import dev.extframework.core.app.api.ApplicationDescriptor
 import dev.extframework.core.minecraft.api.MinecraftAppApi
-import dev.extframework.tooling.api.target.ApplicationDescriptor
-import dev.extframework.tooling.api.target.ApplicationTarget
+import java.nio.ByteBuffer
 import java.nio.file.Path
 
 private fun emptyAccess(version: String) = object : ArchiveAccessTree {
@@ -24,11 +25,11 @@ private fun emptyAccess(version: String) = object : ArchiveAccessTree {
 }
 
 internal class ClasspathApp(
-    classpath: List<Path>,
-    version: String,
+    override val classpath: List<Path>,
+    override val version: String,
     override val path: Path,
     override val gameJar: Path
-) : MinecraftAppApi(classpath) {
+) : MinecraftAppApi() {
     override val gameDir: Path = path
 
     override val node: ClassLoadedArchiveNode<ApplicationDescriptor> =

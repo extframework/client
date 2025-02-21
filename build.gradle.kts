@@ -11,13 +11,13 @@ plugins {
     java
     application
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("dev.extframework.common") version "1.0.50"
+    id("dev.extframework.common") version "1.0.51"
 
     id("me.champeau.mrjar") version "0.1.1"
 }
 
 group = "dev.extframework"
-version = "1.1.3-BETA"
+version = "1.1.4-BETA"
 
 repositories {
     mavenCentral()
@@ -57,7 +57,6 @@ dependencies {
     extLoader()
     implementation("dev.extframework.core:app-api:1.0-BETA")
     implementation("dev.extframework.core:minecraft-api:1.0-BETA")
-//    coreMcApi()
     resourceApi(version = "1.2.1-SNAPSHOT")
 
     implementation("dev.extframework:boot:$BOOT_VERSION:jdk11")
